@@ -1,37 +1,15 @@
-
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.util.Arrays;
 import java.io.BufferedReader;
-import java.util.Comparator;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Scanner;
 import java.util.StringTokenizer;
-import java.util.Locale;
 
+//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
+// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
-
-    static BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-    static StringTokenizer st = new StringTokenizer("");
-
-    static String next() {
-        while (!st.hasMoreTokens()) {
-            try {
-                String line = br.readLine();
-                if (line == null)
-                    return null;
-                st = new StringTokenizer(line);
-            } catch (IOException e) {
-                return null;
-            }
-        }
-        return st.nextToken();
-    }
-
-    static int nextInt() {
-        return Integer.parseInt(next());
-    }
-
     static class Point {
-        int x, y;
+        int x, y, in;
 
         Point(int x, int y) {
             this.x = x;
@@ -39,101 +17,85 @@ public class Main {
         }
     }
 
-    // --- ALGORITHM METHODS MOVED DIRECTLY INTO MAIN ---
+    public static void main(String[] args) throws Exception {
+        Scanner sc = new Scanner(System.in);
 
-    static double euclideanDistances(Point p1, Point p2) {
-        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+        while (sc.hasNextInt()) {
+            int n = sc.nextInt();
+            Point[] points = new Point[n];
+            Point[] pointsY = new Point[n];
+
+            for (int i = 0; i < n; i++) {
+                int x = sc.nextInt();
+                int y = sc.nextInt();
+                points[i] = new Point(x, y);
+                pointsY[i] = new Point(x, y);
+            }
+
+            Arrays.sort(points, (p1, p2) -> Integer.compare(p1.x, p2.x));
+            Arrays.sort(pointsY, (p1, p2) -> Integer.compare(p1.y, p2.y));
+            for (int i = 0; i < n; i++) {
+                points[i].in = i;
+            }
+            ArrayList<Point> list = new ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                list.add(pointsY[i]);
+            }
+            double minPerimeter = getSmallestPerimeter(points, 0, n - 1, list);
+
+            System.out.printf("%.3f\n", minPerimeter);
+        }
     }
 
-    static double perimeter(Point p1, Point p2, Point p3) {
-        return euclideanDistances(p1, p2) +
-                euclideanDistances(p1, p3) +
-                euclideanDistances(p2, p3);
-    }
-
-    static double getMinPerimeterTriangle(Point[] points) {
-        Arrays.sort(points, Comparator.comparingInt((Point p) -> p.x).thenComparingInt((Point p) -> p.y));
-        Point[] temp = new Point[points.length];
-        return getMinPerimeterTriangle(points, temp, 0, points.length);
-    }
-
-    static double getMinPerimeterTriangle(Point[] points, Point[] temp, int l, int r) {
-        if (r - l <= 3) {
-            Arrays.sort(points, l, r, Comparator.comparingInt((Point p) -> p.y).thenComparingInt((Point p) -> p.x));
-            if (r - l < 3)
-                return Double.POSITIVE_INFINITY;
-            return perimeter(points[l], points[l + 1], points[l + 2]);
+    private static double getSmallestPerimeter(Point[] points, int l, int r, ArrayList<Point> curY) {
+        // base case
+        int n = r - l + 1;
+        if (n < 3) {
+            return Double.MAX_VALUE;
+        }
+        if (n == 3) {
+            return getPerimeter(points[l], points[l + 1], points[l + 2]);
         }
 
-        int mid = (r + l) / 2;
-        int midx = points[mid].x;
-        double lp = getMinPerimeterTriangle(points, temp, l, mid);
-        double rp = getMinPerimeterTriangle(points, temp, mid, r);
-        double d = Math.min(lp, rp);
-
-        // merge l----mid, mid----r by y.
-        int i = l, j = mid, k = l;
-        while (i < mid && j < r) {
-            if (points[i].y <= points[j].y)
-                temp[k++] = points[i++];
+        int mid = l + (r - l) / 2;
+        ArrayList<Point> y1 = new ArrayList<>(mid - l + 1);
+        ArrayList<Point> y2 = new ArrayList<>(r - mid);
+        for (Point i : curY) {
+            if (i.in <= mid)
+                y1.add(i);
             else
-                temp[k++] = points[j++];
-        }
-        while (i < mid)
-            temp[k++] = points[i++];
-        while (j < r)
-            temp[k++] = points[j++];
-
-        int stripCount = 0;
-        for (int t = l; t < r; ++t) {
-            points[t] = temp[t];
-            if (Math.abs(points[t].x - midx) < d / 2.0)
-                temp[stripCount++] = points[t];
+                y2.add(i);
         }
 
-        for (int a = 0; a < stripCount; ++a) {
-            for (int b = a + 1; b < stripCount; ++b) {
-                if (temp[b].y - temp[a].y >= d / 2.0)
-                    break;
-                double disAB = euclideanDistances(temp[a], temp[b]);
-                if (disAB >= d / 2.0)
-                    continue;
-                for (int c = b + 1; c < stripCount; ++c) {
-                    if (temp[c].y - temp[a].y >= d / 2.0)
-                        break;
-                    double disBC = euclideanDistances(temp[b], temp[c]);
-                    double disAC = euclideanDistances(temp[a], temp[c]);
-                    d = Math.min(d, disAB + disBC + disAC);
+        double perimeter1 = getSmallestPerimeter(points, l, mid, y1);
+        double perimeter2 = getSmallestPerimeter(points, mid + 1, r, y2);
+        double perimeter = Math.min(perimeter1, perimeter2);
+
+        // combine
+        Point[] check = new Point[curY.size()];
+        int checkSize = 0;
+        for (Point i : curY) {
+            if (Math.abs(i.x - points[mid].x) <= perimeter / 2.0)
+                check[checkSize++] = i;
+        }
+        for (int i = 0; i < checkSize; i++) {
+            for (int j = i + 1; j < checkSize && (check[j].y - check[i].y) < (perimeter / 2.0); j++) {
+                for (int k = j + 1; k < checkSize && (check[k].y - check[i].y) < perimeter / 2.0; k++) {
+                    double currentPerimeter = getPerimeter(check[i], check[j], check[k]);
+                    perimeter = Math.min(perimeter, currentPerimeter);
                 }
             }
         }
-        return d;
+        return perimeter;
     }
 
-    // --- MAIN EXECUTION ---
-    public static void main(String[] args) {
+    private static double getDistance(Point p1, Point p2) {
+        long dx = (long) p1.x - p2.x;
+        long dy = (long) p1.y - p2.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
 
-        String token = next();
-        if (token == null)
-            return;
-
-        int numTestCases = Integer.parseInt(token);
-        StringBuilder out = new StringBuilder();
-
-        for (int t = 0; t < numTestCases; t++) {
-
-            int n = nextInt();
-            Point[] points = new Point[n];
-
-            for (int i = 0; i < n; i++) {
-                points[i] = new Point(nextInt(), nextInt());
-            }
-
-            // Call the static method directly
-            double minPerimeter = getMinPerimeterTriangle(points);
-            out.append(String.format(Locale.US, "%.3f\n", minPerimeter));
-        }
-
-        System.out.print(out);
+    private static double getPerimeter(Point p1, Point p2, Point p3) {
+        return getDistance(p1, p2) + getDistance(p2, p3) + getDistance(p3, p1);
     }
 }
