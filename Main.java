@@ -8,49 +8,49 @@ import java.util.Locale;
 
 public class Main {
 
-    static class FastScanner {
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        StringTokenizer st = new StringTokenizer("");
+    static BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    static StringTokenizer st = new StringTokenizer("");
 
-        String next() {
-            while (!st.hasMoreTokens()) {
-                try {
-                    String line = br.readLine();
-                    if (line == null)
-                        return null;
-                    st = new StringTokenizer(line);
-                } catch (IOException e) {
+    // 2. Make the scanner methods static members of Main
+    static String next() {
+        while (!st.hasMoreTokens()) {
+            try {
+                String line = br.readLine();
+                if (line == null)
                     return null;
-                }
+                st = new StringTokenizer(line);
+            } catch (IOException e) {
+                return null;
             }
-            return st.nextToken();
         }
+        return st.nextToken();
+    }
 
-        int nextInt() {
-            return Integer.parseInt(next());
-        }
+    static int nextInt() {
+        return Integer.parseInt(next());
     }
 
     public static void main(String[] args) {
-
-        FastScanner fs = new FastScanner();
-        String token = fs.next();
+        
+        String token = next();
         if (token == null)
             return;
 
         int numTestCases = Integer.parseInt(token);
-        minPerimeterTriangle solver = new minPerimeterTriangle();
         StringBuilder out = new StringBuilder();
 
+        MinPerimeterTriangle minPT = new MinPerimeterTriangle();
+
         for (int t = 0; t < numTestCases; t++) {
-            int n = fs.nextInt();
+            
+            int n = nextInt();
             Point[] points = new Point[n];
 
             for (int i = 0; i < n; i++) {
-                points[i] = new Point(fs.nextInt(), fs.nextInt());
+                points[i] = new Point(nextInt(), nextInt());
             }
 
-            double minPerimeter = solver.getMinPerimeterTriangle(points);
+            double minPerimeter = minPT.getMinPerimeterTriangle(points);
             out.append(String.format(Locale.US, "%.3f\n", minPerimeter));
         }
 
@@ -58,7 +58,7 @@ public class Main {
     }
 }
 
-class minPerimeterTriangle {
+class MinPerimeterTriangle {
 
     private Double euclideanDistances(Point p1, Point p2) {
         return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
